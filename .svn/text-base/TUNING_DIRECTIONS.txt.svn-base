@@ -1,0 +1,52 @@
+######### THIS FILE INCLUDES INSTRUCTIONS FOR TUNING THE MUSTANG UMUXes AND/OR STARTING DEMOD DATA###################
+
+To start DEMOD DATA ONLY (ie. just stream junk data):
+
+To start initialize the ROAChes AND start demod data: 
+   1.First turn on the ROACHes, HEMTs, and DS345 function generator using the iBoot bar. 
+   2. Then run "start_demod.py" in ipython from the umuxsvn 
+      	   (NOTE this must be done on egret or 
+      	   the function generator will not start).
+   3. The function you need is called "initroaches" and requires two keywords: 
+      a. "rootlist": list of paths to ROACHIP file of each ROACH you want to initialize 
+      b. "freqFile" which should point to any old copy of default_freqs.txt. 
+      	 There is one available in the svn called "mux1_tuned_freqs_ref.txt". 
+
+####EXAMPLE OF HOW TO INITIALIZE ALL 4 ROACHES FROM lmonctrl:~/umuxsvn:#####
+	from start_demod import initroaches
+	p = '/home/scratch/bmason/m2scr'
+	rl = ['%s/roach%d' % (p,i) for i in [1,2,3,4]]
+	um = initroaches(rootlist = rl, freqFile = "mux1_tuned_freqs_ref.txt")
+
+Once this is complete: the funciton generator will be on, running at 1kHz, 0.249V, and all 4 ROACHes will be streaming demod data, this is all you need if you just want to perform health checks such as checking PingPong, frame counters, etc.
+
+
+To FULLY TUNE THE SYSTEM:
+
+Once again running ipython from the lmonctrl:~/umuxsvn: The python script to use is "multitune.py".
+
+1. First ensure the ROACHes, HEMTs, and DS345 are all ON in the iBoot Ba  
+2. To initialize the ROACHes you once again run "initroaches":
+    however this version requires only a rootdir list and WILL NOT start demod data, it will only instantiate the umux classes.
+3. Once finished you will have 4 umux classes, eg. ums[i] each of which is the instantiation of a single ROACH. 
+   The ROACHes often come up in different orders so be careful not to assume ums[0]=roach1,
+   the will be a statement printed saying "ums[i] is mustangr1-II"
+4. Currently attenuation for muxes 1 and 4 must be specified by hand (I will change this soon) so for now once you figure out which index coresponds to ROACHes/muxes 1 & 4, and set um.progAttens(18,0). 
+5. The run multtiune. See example below:
+
+   ##EXAMPLE OF HOW TO RUN MULTITUNE####
+	from multitune import initroaches, multitune, startDemod
+	rootlist=['/home/scratch/bmason/m2scr/roach1/','/home/scratch/bmason/m2scr/roach2/','/home/scratch/bmason/m2scr/roach3/','/home/scratch/bmason/m2scr/roach4/']
+	ums=initroaches(rootlist)
+	ums[***mux1***].progAttens(18,0)
+	ums[***mux4***].progAttens(18,0)
+	multitune(ums)
+ This will tune all the muxes in the input list ums, the proper save directory in /home/scratch/sstanchf/M2_tunings will automatically be created
+      	  FEB 26: RIGHT NOW IT ONLY SAVES IN A FOLDER SPECIFIED BY DATE, 
+	  SO RUNNING TWICE IN ONE DAY WILL OVERWRITE YOUR PREVIOUS TUNING PLOTS
+	   FOR ANY ROACH THAT HAS ALREADY BEEN TUNED THAT DAY....SARA IS FIXING THIS ASAP!!!!
+
+6. Then you can proceed to start demod using startDemod:
+   #### EXAMPLE OF HOW TO START DEMOD #######
+   	startDemod(ums,1000,0.249)
+7. All ROACHes in ums should be streaming demod data
